@@ -1,0 +1,512 @@
+#include <iostream>
+#include <string>
+#include <limits>
+#include <algorithm>
+
+using namespace std;
+
+struct Time {
+    int hours;
+    int minutes;
+    int seconds;
+};
+
+// Функция ввода времени с проверкой корректности
+Time inputTime() {
+    Time t;
+
+    do {
+        cout << "Часы (0-23): ";
+        cin >> t.hours;
+        if (t.hours < 0 || t.hours > 23) {
+            cout << "Ошибка! Часы должны быть в диапазоне 0-23. " << endl;
+        }
+    } while (t.hours < 0 || t.hours > 23);
+
+    do {
+        cout << "Минуты (0-59): ";
+        cin >> t.minutes;
+        if (t.minutes < 0 || t.minutes > 59) {
+            cout << "Ошибка! Минуты должны быть в диапазоне 0-59. " << endl;
+        }
+    } while (t.minutes < 0 || t.minutes > 59);
+
+    do {
+        cout << "Секунды (0-59): ";
+        cin >> t.seconds;
+        if (t.seconds < 0 || t.seconds > 59) {
+            cout << "Ошибка! Секунды должны быть в диапазоне 0-59. " << endl;
+        }
+    } while (t.seconds < 0 || t.seconds > 59);
+
+    return t;
+}
+
+// Функция для вывода времени
+void printTime(const Time& t) {
+    cout << (t.hours < 10 ? "0" : "") << t.hours << ":"
+        << (t.minutes < 10 ? "0" : "") << t.minutes << ":"
+        << (t.seconds < 10 ? "0" : "") << t.seconds;
+}
+
+// Функция для сравнения двух времен (возвращает true, если t1 > t2)
+bool isTimeGreater(const Time& t1, const Time& t2) {
+    if (t1.hours != t2.hours) return t1.hours > t2.hours;
+    if (t1.minutes != t2.minutes) return t1.minutes > t2.minutes;
+    return t1.seconds > t2.seconds;
+}
+
+// Функция для сравнения двух времен (возвращает true, если t1 < t2)
+bool isTimeLess(const Time& t1, const Time& t2) {
+    if (t1.hours != t2.hours) return t1.hours < t2.hours;
+    if (t1.minutes != t2.minutes) return t1.minutes < t2.minutes;
+    return t1.seconds < t2.seconds;
+}
+
+
+// Функция для проверки равенства двух времен
+bool isTimeEqual(const Time& t1, const Time& t2) {
+    return t1.hours == t2.hours && t1.minutes == t2.minutes && t1.seconds == t2.seconds;
+}
+
+// Прямой (последовательный) поиск
+int linearSearch(Time* arr, int size, const Time& target, int& comparisons) {
+    comparisons = 0;
+    for (int i = 0; i < size; i++) {
+        comparisons++;
+        if (isTimeEqual(arr[i], target)) {
+            return i; // Найден элемент, возвращаем индекс
+        }
+    }
+    return -1; // Элемент не найден
+}
+
+// Бинарный поиск (сортировка массива по возрастанию)
+int binarySearch(Time* arr, int size, const Time& target, int& comparisons) {
+    comparisons = 0;
+    int left = 0;
+    int right = size - 1;
+    
+    while (left <= right) {
+        int mid = left + (right - left) / 2;
+        comparisons++;
+
+        if (isTimeEqual(arr[mid], target)) {
+            return mid; // Найден элемент
+        }
+        else if (isTimeLess(arr[mid], target)) {
+            comparisons++;
+            left = mid + 1;
+
+        }
+        else {
+            comparisons++;
+            right = mid - 1;
+        }
+    }
+    return -1;
+}
+
+// Сортировка обменом (пузырьковая сортировка)
+void bubbleSort(Time* arr, int size, int& comparisons, int& swaps) {
+    comparisons = 0;
+    swaps = 0;
+
+    for (int i = 0; i < size - 1; i++) {
+        for (int j = 0; j < size - i - 1; j++) {
+            comparisons++;
+            if (isTimeGreater(arr[j], arr[j + 1])) {
+                swap(arr[j], arr[j + 1]);
+                swaps++;
+            }
+        }
+    }
+}
+
+// Сортировка вставками
+void insertionSort(Time* arr, int size, int& comparisons, int& swaps) {
+    comparisons = 0;
+    swaps = 0;
+
+    for (int i = 1; i < size; i++) {
+        Time key = arr[i];
+        int j = i - 1;
+
+        comparisons++;
+        while (j >= 0 && isTimeGreater(arr[j], key)) {
+            comparisons++;
+            arr[j + 1] = arr[j];
+            swaps++;
+            j--;
+        }
+        arr[j + 1] = key;
+        if (j + 1 != i) swaps++;
+    }
+}
+
+// Сортировка Шелла
+void shellSort(Time* arr, int size, int& comparisons, int& swaps) {
+    comparisons = 0;
+    swaps = 0;
+
+    // Последовательность gaps (можно оптимизировать)
+    for (int gap = size / 2; gap > 0; gap /= 2) {
+        for (int i = gap; i < size; i++) {
+            Time temp = arr[i];
+            int j;
+
+            comparisons++;
+            for (j = i; j >= gap && isTimeGreater(arr[j - gap], temp); j -= gap) {
+                comparisons++;
+                arr[j] = arr[j - gap];
+                swaps++;
+            }
+            arr[j] = temp;
+            if (j != i) swaps++;
+        }
+    }
+}
+
+// Вспомогательная функция для пирамидальной сортировки (просеивание вниз)
+void heapify(Time* arr, int n, int i, int& comparisons, int& swaps) {
+    int largest = i;
+    int left = 2 * i + 1;
+    int right = 2 * i + 2;
+
+    if (left < n) {
+        comparisons++;
+        if (isTimeGreater(arr[left], arr[largest])) {
+            largest = left;
+        }
+    }
+
+    if (right < n) {
+        comparisons++;
+        if (isTimeGreater(arr[right], arr[largest])) {
+            largest = right;
+        }
+    }
+
+    if (largest != i) {
+        swap(arr[i], arr[largest]);
+        swaps++;
+        heapify(arr, n, largest, comparisons, swaps);
+    }
+}
+
+// Пирамидальная сортировка (Heap Sort)
+void heapSort(Time* arr, int size, int& comparisons, int& swaps) {
+    comparisons = 0;
+    swaps = 0;
+
+    // Построение max-heap
+    for (int i = size / 2 - 1; i >= 0; i--) {
+        heapify(arr, size, i, comparisons, swaps);
+    }
+
+    // Извлечение элементов из кучи
+    for (int i = size - 1; i > 0; i--) {
+        swap(arr[0], arr[i]);
+        swaps++;
+        heapify(arr, i, 0, comparisons, swaps);
+    }
+}
+
+// Функция для вывода массива времен
+void printTimeArray(Time* arr, int size) {
+    for (int i = 0; i < size; i++) {
+        cout << i + 1 << ". ";
+        printTime(arr[i]);
+        cout << endl;
+    }
+}
+
+int main() {
+    setlocale(LC_ALL, "Russian");
+
+    Time* timeArray = nullptr;
+    Time* sortedArray = nullptr; // Отсортированная копия массива для поиска
+    int arraySize = 0;
+    int choice;
+    bool isSorted = false; // Флаг, указывающий, отсортированный ли массив
+
+    do {
+        cout << "\n=== МЕНЮ ===" << endl;
+        cout << "1. Ввод данных" << endl;
+        cout << "2. Вывод исходных данных" << endl;
+        cout << "3. Сортировка массива методом обмена" << endl;
+        cout << "4. Сортировка массива методом вставками" << endl;
+        cout << "5. Сортировка массива методом Шелла" << endl;
+        cout << "6. Сортировка массива пирамидальным методом" << endl;
+        cout << "7. Прямой (последовательный) поиск" << endl;
+        cout << "8. Бинарный поиск" << endl;
+        cout << "9. Выход из программы" << endl;
+        cout << "Выберите пункт меню: " << endl;
+        cin >> choice;
+
+        // Проверка корректности ввода
+        if (cin.fail()) {
+            cin.clear();
+            cin.ignore(numeric_limits<streamsize>::max(), '\n');
+            cout << "Ошибка! Введите число от 1 до 7." << endl;
+            continue;
+        }
+
+        switch (choice) {
+        case 1: {
+            // Ввод данных
+            if (timeArray != nullptr) {
+                delete[] timeArray;
+            }
+
+            if (sortedArray != nullptr) {
+                delete[] sortedArray;
+                sortedArray = nullptr;
+            }
+
+            cout << "Введите количество элементов массива: ";
+            cin >> arraySize;
+
+            if (arraySize <= 0) {
+                cout << "Размер массива должен быть положительным числом!" << endl;
+                arraySize = 0;
+                timeArray = nullptr;
+                isSorted = false;
+                break;
+            }
+
+            timeArray = new Time[arraySize];
+
+            for (int i = 0; i < arraySize; i++) {
+                cout << "\nВведите время #" << i + 1 << ":" << endl;
+                timeArray[i] = inputTime();
+            }
+            cout << "Данные успешно введены!" << endl;
+            break;
+        }
+
+        case 2: {
+            // Вывод исходных данных
+            if (timeArray == nullptr || arraySize == 0) {
+                cout << "Массив пуст! Сначала введите данные." << endl;
+            }
+            else {
+                cout << "\nИсходный массив времен:" << endl;
+                printTimeArray(timeArray, arraySize);
+            }
+            break;
+        }
+
+        case 3: {
+            // Сортировка обменом
+            if (timeArray == nullptr || arraySize == 0) {
+                cout << "Массив пуст! Сначала введите данные." << endl;
+            }
+            else {
+                int comparisons, swaps;
+                
+                if (sortedArray != nullptr) {
+                    delete[] sortedArray;
+                }
+                sortedArray = new Time[arraySize];
+
+                // Создаем копию массива для сортировки
+                for (int i = 0; i < arraySize; i++) {
+                    sortedArray[i] = timeArray[i];
+                }
+
+                bubbleSort(sortedArray, arraySize, comparisons, swaps);
+
+                cout << "\nРезультат сортировки обменом:" << endl;
+                printTimeArray(sortedArray, arraySize);
+                cout << "Количество сравнений: " << comparisons << endl;
+                cout << "Количество обменов: " << swaps << endl;
+
+                isSorted = true;
+            }
+            break;
+        }
+
+        case 4: {
+            // Сортировка вставками
+            if (timeArray == nullptr || arraySize == 0) {
+                cout << "Массив пуст! Сначала введите данные." << endl;
+            }
+            else {
+                int comparisons, swaps;
+
+                if (sortedArray != nullptr) {
+                    delete[] sortedArray;
+                }
+                sortedArray = new Time[arraySize];
+
+                // Создаем копию массива для сортировки
+                for (int i = 0; i < arraySize; i++) {
+                    sortedArray[i] = timeArray[i];
+                }
+
+                insertionSort(sortedArray, arraySize, comparisons, swaps);
+
+                cout << "\nРезультат сортировки вставками:" << endl;
+                printTimeArray(sortedArray, arraySize);
+                cout << "Количество сравнений: " << comparisons << endl;
+                cout << "Количество обменов: " << swaps << endl;
+
+                isSorted = true;
+            }
+            break;
+        }
+
+        case 5: {
+            // Сортировка Шелла
+            if (timeArray == nullptr || arraySize == 0) {
+                cout << "Массив пуст! Сначала введите данные." << endl;
+            }
+            else {
+                int comparisons, swaps;
+
+                if (sortedArray != nullptr) {
+                    delete[] sortedArray;
+                }
+                sortedArray = new Time[arraySize];
+
+                // Создаем копию массива для сортировки
+                for (int i = 0; i < arraySize; i++) {
+                    sortedArray[i] = timeArray[i];
+                }
+
+                shellSort(sortedArray, arraySize, comparisons, swaps);
+
+                cout << "\nРезультат сортировки Шелла:" << endl;
+                printTimeArray(sortedArray, arraySize);
+                cout << "Количество сравнений: " << comparisons << endl;
+                cout << "Количество обменов: " << swaps << endl;
+
+                delete[] sortedArray;
+            }
+            break;
+        }
+
+        case 6: {
+            // Пирамидальная сортировка
+            if (timeArray == nullptr || arraySize == 0) {
+                cout << "Массив пуст! Сначала введите данные." << endl;
+            }
+            else {
+                int comparisons, swaps;
+
+                if (sortedArray != nullptr) {
+                    delete[] sortedArray;
+                }
+                sortedArray = new Time[arraySize];
+
+                // Создаем копию массива для сортировки
+                for (int i = 0; i < arraySize; i++) {
+                    sortedArray[i] = timeArray[i];
+                }
+
+                heapSort(sortedArray, arraySize, comparisons, swaps);
+
+                cout << "\nРезультат пирамидальной сортировки:" << endl;
+                printTimeArray(sortedArray, arraySize);
+                cout << "Количество сравнений: " << comparisons << endl;
+                cout << "Количество обменов: " << swaps << endl;
+
+                isSorted = true;
+            }
+            break;
+        }
+
+        case 7: {
+            // Прямой (последовательный) поиск
+            if (timeArray == nullptr || arraySize == 0) {
+                cout << "Массив пуст! Сначала введите данные." << endl;
+            }
+            else {
+                cout << "\nВведите время для поиска:" << endl;
+                Time target = inputTime();
+
+                int comparisons;
+                int index;
+
+                // Прямой поиск можно выполнять как в отсортированном, так и в неотсортированном массиве
+                if (isSorted && sortedArray != nullptr) {
+                    index = linearSearch(sortedArray, arraySize, target, comparisons);
+                    cout << "\nПоиск в отсортированном массиве:" << endl;
+                }
+                else {
+                    index = linearSearch(timeArray, arraySize, target, comparisons);
+                    cout << "\nПоиск в исходном массиве:" << endl;
+                }
+
+                if (index != -1) {
+                    cout << "Время ";
+                    printTime(target);
+                    cout << " найдено на позиции " << index + 1 << endl;
+                }
+                else {
+                    cout << "Время ";
+                    printTime(target);
+                    cout << " не найдено в массиве" << endl;
+                }
+                cout << "Количество сравнений: " << comparisons << endl;
+            }
+            break;
+        }
+
+        case 8: {
+            // Бинарный поиск
+            if (timeArray == nullptr || arraySize == 0) {
+                cout << "Массив пуст! Сначала введите данные." << endl;
+            }
+            else if (!isSorted || sortedArray == nullptr) {
+                cout << "Для бинарного поиска массив должен быть отсортирован! Выполните сортировку сначала." << endl;
+            }
+            else {
+                cout << "\nВведите время для поиска:" << endl;
+                Time target = inputTime();
+
+                int comparisons;
+                int index = binarySearch(sortedArray, arraySize, target, comparisons);
+
+                if (index != -1) {
+                    cout << "Время ";
+                    printTime(target);
+                    cout << " найдено на позиции " << index + 1 << " в отсортированном массиве" << endl;
+                }
+                else {
+                    cout << "Время ";
+                    printTime(target);
+                    cout << " не найдено в массиве" << endl;
+                }
+                cout << "Количество сравнений: " << comparisons << endl;
+            }
+            break;
+        }
+
+
+        case 9: {
+            // Выход из программы
+            cout << "Выход из программы..." << endl;
+            break;
+        }
+
+        default: {
+            cout << "Неверный выбор! Введите число от 1 до 7." << endl;
+            break;
+        }
+        }
+
+    } while (choice != 9);
+
+    // Освобождение памяти
+    if (timeArray != nullptr) {
+        delete[] timeArray;
+    }
+
+    if (sortedArray != nullptr) {
+        delete[] sortedArray;
+    }
+
+    return 0;
+}
